@@ -1,0 +1,1 @@
+# aws-critical-resource-test
