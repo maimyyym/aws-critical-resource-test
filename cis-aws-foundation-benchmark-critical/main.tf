@@ -47,16 +47,6 @@ resource "aws_codebuild_project" "app_build" {
   }
 }
 
-# 3. [DMS.1] DMSレプリケーションインスタンスがパブリック - Critical違反
-resource "aws_dms_replication_instance" "main" {
-  identifier                    = "main-replication-instance"
-  replication_instance_class    = "dms.t3.micro"
-  allocated_storage            = 20
-
-  # Critical違反: パブリックアクセス許可
-  publicly_accessible = true
-}
-
 # 4. [DocumentDB.3] DocumentDBスナップショットがパブリック - Critical違反
 resource "aws_docdb_cluster_snapshot" "app_backup" {
   db_cluster_identifier          = aws_docdb_cluster.app_cluster.id
@@ -68,7 +58,7 @@ resource "aws_docdb_cluster_snapshot" "app_backup" {
 
 # 5. [EC2.19] セキュリティグループでリスクの高いポートへの無制限アクセス - Critical違反
 resource "aws_security_group" "risky_ports_sg" {
-  name_description = "Risky ports security group"
+  description = "Risky ports security group"
   vpc_id          = aws_vpc.main.id
 
   # Critical違反: 危険なポートへの全世界アクセス許可
@@ -170,7 +160,7 @@ resource "aws_s3_bucket_policy" "cloudtrail_public_policy" {
 # 11. [CloudTrail.1] CloudTrailマルチリージョン追跡なし - High違反
 resource "aws_cloudtrail" "single_region_trail" {
   name           = "single-region-trail"
-  s3_bucket_name = aws_s3_bucket.cloudtrail_bucket.id
+  s3_bucket_name = aws_s3_bucket.cloudtrail_public.id
 
   # High違反: マルチリージョン追跡が無効
   is_multi_region_trail = false
@@ -260,30 +250,6 @@ resource "aws_ecr_repository" "app_repo" {
   image_scanning_configuration {
     scan_on_push = false
   }
-}
-
-# 17. [EKS.1] EKSクラスターエンドポイントがパブリック - High違反
-resource "aws_eks_cluster" "app_cluster" {
-  name     = "app-cluster"
-  role_arn = aws_iam_role.eks_cluster_role.arn
-  version  = "1.21"
-
-  vpc_config {
-    subnet_ids = [
-      aws_subnet.private_1.id,
-      aws_subnet.private_2.id,
-    ]
-
-    # High違反: エンドポイントがパブリックアクセス可能
-    endpoint_config {
-      public_access = true
-      private_access = false
-    }
-  }
-
-  depends_on = [
-    aws_iam_role_policy_attachment.eks_cluster_policy,
-  ]
 }
 
 # 18. [AutoScaling.3] Auto Scalingでインスタンスメタデータ設定不備 - High違反
