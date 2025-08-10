@@ -29,6 +29,20 @@ resource "aws_security_group" "web_server_sg" {
   }
 }
 
+resource "aws_instance" "web_server" {
+  ami           = "ami-0c55b159cbfafe1f0"  # Amazon Linux 2 AMI
+  instance_type = "t2.micro"
+  
+  security_groups = [aws_security_group.web_server_sg.name]
+  
+  tags = {
+    Name        = "WebServer"
+    Environment = var.environment
+    Project     = var.project_name
+    Purpose     = "CIS Benchmark Violation Testing"
+  }
+}
+
 # 2. [S3.1][S3.8] S3バケットのパブリックアクセス許可 - Critical
 resource "aws_s3_bucket" "data_bucket" {
   bucket = "my-company-sensitive-data-bucket-2025"
